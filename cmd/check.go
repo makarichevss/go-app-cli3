@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +18,21 @@ var checkCmd = &cobra.Command{
 	Long:  `Performs a health check by sending a request to the specified URL(s) and reports the status.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		for _, url := range args {
-			checkURL(ctx, url, threshold, retries)
+		if output == "table" {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"URL", "OK"})
+			for _, url := range args {
+				status := "Down"
+				if checkURL(ctx, url, threshold, retries) {
+					status = "Up"
+				}
+				table.Append([]string{url, status})
+			}
+			table.Render()
+		} else {
+			for _, url := range args {
+				checkURL(ctx, url, threshold, retries)
+			}
 		}
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -35,7 +49,7 @@ func init() {
 	rootCmd.AddCommand(checkCmd)
 }
 
-func checkURL(ctx context.Context, url string, threshold float64, retries int) {
+func checkURL(ctx context.Context, url string, threshold float64, retries int) bool {
 	var resp *http.Response
 	var lastError error
 	var duration time.Duration
@@ -75,9 +89,13 @@ func checkURL(ctx context.Context, url string, threshold float64, retries int) {
 	}
 	if lastError != nil {
 		l.ErrorContext(ctx, "fetching error", "url", url, "retries", retries, "err", lastError)
-		return
+		return false
 	}
-
+	if resp.StatusCode == http.StatusOK {
+		return true
+	} else {
+		return false
+	}
 }
 
 func isValidURL(u string) bool {

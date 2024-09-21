@@ -21,10 +21,12 @@ var (
 	silent      bool
 	verbose     bool
 	versionFlag bool
+
+	output string
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "go-cli-app2",
+	Use:   "go-cli-app3",
 	Short: "A tool for monitoring health status and responsiveness of web applications",
 	Long: `The healthcheck command is designed to assess the health and
 responsiveness of specified web applications. It sends HTTP requests
@@ -44,9 +46,13 @@ analysis."`,
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		time.Local = time.UTC
-		verbose, _ := cmd.Flags().GetBool("verbose")
-		silent, _ := cmd.Flags().GetBool("silent")
-		l = logger.New(logFile, verbose, silent)
+		actualSilent := silent
+		actualVerbose := verbose
+		if output == "table" {
+			actualSilent = true
+			actualVerbose = false
+		}
+		l = logger.New(logFile, actualVerbose, actualSilent, output)
 	},
 }
 
@@ -67,5 +73,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&silent, "silent", false, "Run in silent mode without stdout output")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Run in verbose mode.  Overrides silent mode")
 	rootCmd.Flags().BoolVar(&versionFlag, "version", false, "Print version")
+	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "", "Output format (json/text/table)")
 
 }
