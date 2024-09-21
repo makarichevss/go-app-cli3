@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -21,11 +22,13 @@ var checkCmd = &cobra.Command{
 		ctx := cmd.Context()
 		if output == "table" {
 			table := tablewriter.NewWriter(os.Stdout)
+			upColor := color.New(color.FgGreen).SprintFunc()
+			downColor := color.New(color.FgRed).SprintFunc()
 			table.SetHeader([]string{"URL", "OK"})
 			for _, url := range args {
-				status := "Down"
+				status := downColor("Down")
 				if checkURL(ctx, url, threshold, retries) {
-					status = "Up"
+					status = upColor("Up")
 				}
 				table.Append([]string{url, status})
 			}

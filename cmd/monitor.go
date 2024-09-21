@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/briandowns/spinner"
+	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -42,16 +44,25 @@ func monitorURLs(ctx context.Context, urls []string) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	if output == "table" {
+		s.Start()
+	}
+
 	for range ticker.C {
 		if output == "table" {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"URL", "OK"})
+			table.SetHeader([]string{"URL", "OK", "Last Time Checked"})
+
+			upColor := color.New(color.FgGreen).SprintFunc()
+			downColor := color.New(color.FgRed).SprintFunc()
 			for _, url := range urls {
-				status := "Down"
+				status := downColor("Down")
 				if checkURL(ctx, url, threshold, retries) {
-					status = "Up"
+					status = upColor("Up")
 				}
-				table.Append([]string{url, status})
+				currentTime := time.Now().Format("2006-01-02 15:04:05")
+				table.Append([]string{url, status, currentTime})
 			}
 
 			cmd := exec.Command("cmd", "/c", "cls")
@@ -60,6 +71,7 @@ func monitorURLs(ctx context.Context, urls []string) {
 			if err != nil {
 				fmt.Println("Unable to clear the screen: ", err)
 			}
+			s.Disable()
 			table.Render()
 		} else {
 			for _, url := range urls {
