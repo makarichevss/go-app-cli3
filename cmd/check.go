@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -53,6 +54,11 @@ func checkURL(ctx context.Context, url string, threshold float64, retries int) b
 	var resp *http.Response
 	var lastError error
 	var duration time.Duration
+
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	if output != "table" || silent {
+		s.Start()
+	}
 	for attempt := 0; attempt <= retries; attempt++ {
 		start := time.Now()
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -62,6 +68,7 @@ func checkURL(ctx context.Context, url string, threshold float64, retries int) b
 
 		client := &http.Client{}
 		resp, err = client.Do(req)
+		s.Disable()
 		if err != nil {
 			l.ErrorContext(ctx, "failed to perform request", "url", url, "err", err)
 		}

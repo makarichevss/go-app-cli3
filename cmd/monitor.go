@@ -3,8 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"time"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -40,8 +43,28 @@ func monitorURLs(ctx context.Context, urls []string) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		for _, url := range urls {
-			checkURL(ctx, url, threshold, retries)
+		if output == "table" {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"URL", "OK"})
+			for _, url := range urls {
+				status := "Down"
+				if checkURL(ctx, url, threshold, retries) {
+					status = "Up"
+				}
+				table.Append([]string{url, status})
+			}
+
+			cmd := exec.Command("cmd", "/c", "cls")
+			cmd.Stdout = os.Stdout
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println("Unable to clear the screen: ", err)
+			}
+			table.Render()
+		} else {
+			for _, url := range urls {
+				checkURL(ctx, url, threshold, retries)
+			}
 		}
 	}
 }
