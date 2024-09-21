@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -44,11 +43,6 @@ func monitorURLs(ctx context.Context, urls []string) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	if output == "table" {
-		s.Start()
-	}
-
 	for range ticker.C {
 		if output == "table" {
 			table := tablewriter.NewWriter(os.Stdout)
@@ -71,7 +65,6 @@ func monitorURLs(ctx context.Context, urls []string) {
 			if err != nil {
 				fmt.Println("Unable to clear the screen: ", err)
 			}
-			s.Disable()
 			table.Render()
 		} else {
 			for _, url := range urls {
